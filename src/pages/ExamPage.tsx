@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import toast from 'react-hot-toast'
-import { ChevronLeft, ChevronRight, Send, BookOpen, Clock, Target } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Send, BookOpen, Clock, Target, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useExamAttempt } from '../hooks/useExamAttempt'
 import { evaluateExam } from '../utils/examEvaluator'
@@ -42,18 +42,11 @@ export default function ExamPage() {
     setAnswers(prev => ({ ...prev, [exam.questions[currentIndex].id]: value }))
   }
 
-  const handleTimeUp = useCallback(() => {
-    toast.error('¡Tiempo agotado! Enviando respuestas...')
-    submitExam()
-  }, [answers])
-
-  const submitExam = () => {
+  const submitExam = useCallback(() => {
     if (!currentUser || !exam) return
     setPhase('submitting')
-
     const score = evaluateExam(exam, answers)
     const passed = score >= exam.minPassPercentage
-
     const attempt = saveAttempt({
       userId: currentUser.id,
       examId: exam.id,
@@ -62,26 +55,26 @@ export default function ExamPage() {
       passed,
       completedAt: new Date().toISOString(),
     })
+    setTimeout(() => navigate(`/results/${attempt.id}`), 900)
+  }, [currentUser, exam, answers, saveAttempt, navigate])
 
-    setTimeout(() => {
-      navigate(`/results/${attempt.id}`)
-    }, 800)
-  }
+  const handleTimeUp = useCallback(() => {
+    toast.error('Tiempo agotado')
+    submitExam()
+  }, [submitExam])
 
   const handleSubmitClick = () => {
     const unanswered = exam ? exam.questions.length - answeredCount : 0
-    if (unanswered > 0) {
-      toast(`Tienes ${unanswered} pregunta(s) sin responder`, { icon: '⚠️' })
-    }
+    if (unanswered > 0) toast(`${unanswered} pregunta(s) sin responder`, { icon: '⚠️' })
     submitExam()
   }
 
   if (!exam) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <p className="text-gray-500 text-lg">Examen no encontrado.</p>
-          <button onClick={() => navigate('/dashboard')} className="mt-4 text-indigo-600 hover:underline">
+        <div className="text-center space-y-2">
+          <p className="text-gray-500">Examen no encontrado.</p>
+          <button onClick={() => navigate('/dashboard')} className="text-blue-600 hover:underline text-sm">
             Volver al dashboard
           </button>
         </div>
@@ -92,13 +85,11 @@ export default function ExamPage() {
   if (alreadyAttempted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
-          <div className="text-5xl mb-4">🔒</div>
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Ya rendiste este examen</h2>
-          <p className="text-gray-500 mb-6">Solo se permite un intento por examen.</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition font-semibold"
+        <div className="bg-white border border-gray-200 rounded-2xl p-10 max-w-sm w-full text-center">
+          <p className="text-lg font-semibold text-gray-800 mb-2">Ya rendiste este examen</p>
+          <p className="text-sm text-gray-400 mb-6">Solo se permite un intento por examen.</p>
+          <button onClick={() => navigate('/dashboard')}
+            className="w-full bg-gray-900 hover:bg-gray-700 text-white py-2.5 rounded-xl text-sm font-medium transition"
           >
             Volver al Dashboard
           </button>
@@ -107,78 +98,66 @@ export default function ExamPage() {
     )
   }
 
+  /* ── INTRO ── */
   if (phase === 'intro') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white border border-gray-200 rounded-2xl p-8 max-w-md w-full"
         >
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-indigo-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-800">{exam.title}</h1>
-            <span className="inline-block mt-2 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium">
-              {exam.area}
-            </span>
+          <div className="mb-6">
+            <span className="text-xs font-medium text-blue-600 uppercase tracking-widest">{exam.area}</span>
+            <h1 className="text-2xl font-bold text-gray-900 mt-1">{exam.title}</h1>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            <div className="bg-gray-50 rounded-xl p-4 text-center">
-              <BookOpen className="w-5 h-5 text-indigo-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-gray-800">{exam.questions.length}</p>
-              <p className="text-xs text-gray-500">Preguntas</p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4 text-center">
-              <Clock className="w-5 h-5 text-indigo-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-gray-800">{EXAM_MINUTES}</p>
-              <p className="text-xs text-gray-500">Minutos</p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4 text-center">
-              <Target className="w-5 h-5 text-indigo-500 mx-auto mb-1" />
-              <p className="text-2xl font-bold text-gray-800">{exam.minPassPercentage}%</p>
-              <p className="text-xs text-gray-500">Para aprobar</p>
-            </div>
+          <div className="grid grid-cols-3 gap-3 mb-6">
+            {[
+              { icon: <BookOpen className="w-4 h-4" />, value: exam.questions.length, label: 'Preguntas' },
+              { icon: <Clock className="w-4 h-4" />, value: `${EXAM_MINUTES} min`, label: 'Tiempo' },
+              { icon: <Target className="w-4 h-4" />, value: `${exam.minPassPercentage}%`, label: 'Para aprobar' },
+            ].map((item, i) => (
+              <div key={i} className="border border-gray-100 rounded-xl p-3 text-center">
+                <div className="text-gray-400 flex justify-center mb-1">{item.icon}</div>
+                <p className="text-lg font-bold text-gray-800">{item.value}</p>
+                <p className="text-xs text-gray-400">{item.label}</p>
+              </div>
+            ))}
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-sm text-amber-800">
-            <strong>Importante:</strong> Solo tienes <strong>un intento</strong>. Una vez iniciado, el tiempo corre. Asegúrate de responder todas las preguntas antes de enviar.
-          </div>
+          <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3 mb-6">
+            Solo tienes <strong className="text-gray-700">un intento</strong>. El tiempo inicia al presionar comenzar.
+          </p>
 
-          <button
-            onClick={() => setPhase('taking')}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-semibold text-lg transition"
+          <button onClick={() => setPhase('taking')}
+            className="w-full bg-gray-900 hover:bg-gray-700 text-white py-3 rounded-xl font-semibold transition"
           >
-            Comenzar Examen
+            Comenzar examen
           </button>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="w-full mt-3 text-gray-500 hover:text-gray-700 py-2 text-sm transition"
+          <button onClick={() => navigate('/dashboard')}
+            className="w-full mt-2 flex items-center justify-center gap-1 text-gray-400 hover:text-gray-600 py-2 text-sm transition"
           >
-            Cancelar
+            <ArrowLeft className="w-3 h-3" /> Cancelar
           </button>
         </motion.div>
       </div>
     )
   }
 
+  /* ── SUBMITTING ── */
   if (phase === 'submitting') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-indigo-50">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
-        >
-          <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-indigo-700 font-semibold text-lg">Evaluando respuestas...</p>
-        </motion.div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-2 border-gray-800 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-gray-600 font-medium">Evaluando respuestas...</p>
+        </div>
       </div>
     )
   }
 
+  /* ── TAKING ── */
   const currentQuestion = exam.questions[currentIndex]
   const isFirst = currentIndex === 0
   const isLast = currentIndex === exam.questions.length - 1
@@ -186,21 +165,34 @@ export default function ExamPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10 px-4 py-3">
-        <div className="max-w-2xl mx-auto flex items-center justify-between gap-4">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-4">
           <div className="flex-1">
-            <ExamProgress
-              current={currentIndex + 1}
-              total={exam.questions.length}
-              answeredCount={answeredCount}
-            />
+            <p className="text-xs text-gray-400 mb-1">{exam.title}</p>
+            <ExamProgress current={currentIndex + 1} total={exam.questions.length} answeredCount={answeredCount} />
           </div>
           <Timer minutes={EXAM_MINUTES} onTimeUp={handleTimeUp} />
         </div>
       </div>
 
-      {/* Question */}
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-8 space-y-5">
+        {/* Dots */}
+        <div className="flex gap-1.5 flex-wrap">
+          {exam.questions.map((q, i) => (
+            <button key={q.id} onClick={() => setCurrentIndex(i)}
+              className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all ${
+                i === currentIndex
+                  ? 'bg-gray-900 text-white'
+                  : answers[q.id]?.trim()
+                  ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                  : 'bg-white border border-gray-200 text-gray-400 hover:border-gray-400'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+
         <AnimatePresence mode="wait">
           <QuestionCard
             key={currentQuestion.id}
@@ -211,41 +203,25 @@ export default function ExamPage() {
           />
         </AnimatePresence>
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-6">
+        {/* Navegación */}
+        <div className="flex justify-between">
           <button
             onClick={() => setCurrentIndex(i => i - 1)}
             disabled={isFirst}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 hover:border-indigo-300 hover:text-indigo-600 transition disabled:opacity-40 disabled:cursor-not-allowed font-medium"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-700 transition disabled:opacity-30 disabled:cursor-not-allowed text-sm font-medium"
           >
             <ChevronLeft className="w-4 h-4" /> Anterior
           </button>
 
-          {/* Question index dots */}
-          <div className="flex gap-1.5">
-            {exam.questions.map((q, i) => (
-              <button
-                key={q.id}
-                onClick={() => setCurrentIndex(i)}
-                className={`w-2.5 h-2.5 rounded-full transition-all ${
-                  i === currentIndex ? 'bg-indigo-600 scale-125' :
-                  answers[q.id]?.trim() ? 'bg-green-400' : 'bg-gray-300'
-                }`}
-              />
-            ))}
-          </div>
-
           {isLast ? (
-            <button
-              onClick={handleSubmitClick}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition"
+            <button onClick={handleSubmitClick}
+              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold transition"
             >
-              <Send className="w-4 h-4" /> Enviar
+              <Send className="w-4 h-4" /> Enviar examen
             </button>
           ) : (
-            <button
-              onClick={() => setCurrentIndex(i => i + 1)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition"
+            <button onClick={() => setCurrentIndex(i => i + 1)}
+              className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold transition"
             >
               Siguiente <ChevronRight className="w-4 h-4" />
             </button>
