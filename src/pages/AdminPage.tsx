@@ -41,7 +41,7 @@ export default function AdminPage() {
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
                         <h2 className="text-lg font-semibold">Exámenes</h2>
-                        <button className="px-4 py-2 bg-indigo-600 text-white rounded-lg">
+                        <button className="px-4 py-2 bg-gray-900 hover:bg-gray-700 text-white rounded-lg text-sm transition">
                             Nuevo Examen
                         </button>
                     </div>
@@ -104,8 +104,8 @@ function TabButton({
         <button
             onClick={onClick}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${active
-                ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-700'
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
         >
             {children}
