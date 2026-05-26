@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import type { Exam, Question } from "../../types";
+import QuestionForm from "./QuestionForm";
 
 interface ExamEditorProps {
     open: boolean
@@ -21,6 +23,8 @@ export default function ExamEditor({
     onSave,
     onCancel,
 }: ExamEditorProps) {
+    const [openQuestion, setOpenQuestion] = useState(false)
+    const [editingQuestion, setEditingQuestion] = useState<Question | undefined>(undefined)
     const [form, setForm] = useState(initialForm)
     const [error, setError] = useState('')
     useEffect(() => {
@@ -45,6 +49,31 @@ export default function ExamEditor({
         }
         setError('')
         onSave(form)
+        toast.success(exam ? 'Examen actualizado' : 'Examen creado')
+    }
+    const handleAddQuestion = () => {
+        setEditingQuestion(undefined)
+        setOpenQuestion(true)
+    }
+    const handleEditQuestion = (q: Question) => {
+        setEditingQuestion(q)
+        setOpenQuestion(true)
+    }
+    const handleSaveQuestion = (q: Question) => {
+        setForm(prev => {
+            const exists = prev.questions.find(x => x.id === q.id)
+            const updated = exists
+                ? prev.questions.map(x => (x.id === q.id ? q : x))
+                : [...prev.questions, q]
+            return { ...prev, questions: updated }
+        })
+        setOpenQuestion(false)
+    }
+    const handleDeleteQuestion = (id: string) => {
+        setForm(prev => ({
+            ...prev,
+            questions: prev.questions.filter(q => q.id !== id),
+        }))
     }
     return (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -92,7 +121,10 @@ export default function ExamEditor({
                 <div className="border rounded-lg p-3">
                     <div className="flex justify-between items-center mb-2">
                         <p className="font-semibold">Preguntas</p>
-                        <button className="text-indigo-600 text-sm font-medium">
+                        <button
+                            onClick={handleAddQuestion}
+                            className="text-indigo-600 text-sm font-medium"
+                        >
                             + Agregar Pregunta
                         </button>
                     </div>
@@ -101,8 +133,24 @@ export default function ExamEditor({
                     ) : (
                         <ul className="space-y-2 text-sm">
                             {form.questions.map((q) => (
-                                <li key={q.id} className="p-2 bg-gray-50 rounded">
-                                    {q.text}
+                                <li key={q.id} className="p-2 bg-gray-50 rounded flex items-start justify-between gap-3">
+                                    <span>{q.text}</span>
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            className="text-xs text-indigo-600 whitespace-nowrap"
+                                            onClick={() => handleEditQuestion(q)}
+                                        >
+                                            Editar
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="text-xs text-red-600 whitespace-nowrap"
+                                            onClick={() => handleDeleteQuestion(q.id)}
+                                        >
+                                            Eliminar
+                                        </button>
+                                    </div>
                                 </li>
                             ))}
                         </ul>
@@ -124,6 +172,12 @@ export default function ExamEditor({
                     </button>
                 </div>
             </div>
+            <QuestionForm 
+                open={openQuestion}
+                question={editingQuestion}
+                onSave={handleSaveQuestion}
+                onCancel={() => setOpenQuestion(false)}
+            />
         </div>
     )
 }
