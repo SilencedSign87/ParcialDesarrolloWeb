@@ -7,5 +7,3 @@
 - Poves Martinez Alessandro Piero
 - Rodriguez Orihuela Scoot Freddy
 - Sulluchuco Vilcampoma Anyelo Roberto
-
----

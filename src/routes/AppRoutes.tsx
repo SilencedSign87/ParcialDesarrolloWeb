@@ -1,6 +1,3 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
-import LoginPage from '../pages/LoginPage'
-import RegisterPage from '../pages/RegisterPage'
 import DashboardPage from '../pages/DashboardPage'
 import AdminPage from '../pages/AdminPage'
 import ExamPage from '../pages/ExamPage'
@@ -8,6 +5,9 @@ import ResultsPage from '../pages/ResultsPage'
 import CertificatePage from '../pages/CertificatePage'
 import CurriculumPage from '../pages/CurriculumPage'
 import ProtectedRoute from './ProtectecRoutes'
+import { Navigate, Route, Routes } from 'react-router-dom'
+import LoginPage from '../pages/LoginPage'
+import RegisterPage from '../pages/RegisterPage'
 
 export default function AppRoutes() {
     return (
