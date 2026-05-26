@@ -19,6 +19,11 @@ export default function DashboardPage() {
         <h1 className="text-xl font-bold text-slate-800">CertApp</h1>
         <div className="flex items-center gap-4">
           <span className="text-sm text-gray-500">{currentUser?.fullName}</span>
+          {currentUser && (
+            <button onClick={() => navigate(`/curriculum/${currentUser.id}`)} className="text-sm bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition">
+              Mi currículum
+            </button>
+          )}
           {currentUser?.role === 'admin' && (
             <button onClick={() => navigate('/admin')} className="text-sm bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition">
               Panel Admin

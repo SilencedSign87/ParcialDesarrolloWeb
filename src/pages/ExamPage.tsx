@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { ChevronLeft, ChevronRight, Send, BookOpen, Clock, Target, ArrowLeft } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useExamAttempt } from '../hooks/useExamAttempt'
+import { useCertificates } from '../hooks/useCertificates'
 import { evaluateExam } from '../utils/examEvaluator'
 import Timer from '../components/exam/Timer'
 import ExamProgress from '../components/exam/ExamProgress'
@@ -20,6 +21,7 @@ export default function ExamPage() {
   const navigate = useNavigate()
   const { currentUser } = useAuth()
   const { hasAttempted, saveAttempt } = useExamAttempt()
+  const { issueCertificate } = useCertificates()
 
   const exam: Exam | undefined = (() => {
     const stored = localStorage.getItem('exams')
@@ -55,8 +57,11 @@ export default function ExamPage() {
       passed,
       completedAt: new Date().toISOString(),
     })
+    if (passed) {
+      issueCertificate(currentUser.id, exam.id, currentUser.fullName, exam.title, score)
+    }
     setTimeout(() => navigate(`/results/${attempt.id}`), 900)
-  }, [currentUser, exam, answers, saveAttempt, navigate])
+  }, [currentUser, exam, answers, saveAttempt, issueCertificate, navigate])
 
   const handleTimeUp = useCallback(() => {
     toast.error('Tiempo agotado')
